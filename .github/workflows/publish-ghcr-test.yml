@@ -1,0 +1,35 @@
+name: Publish GHCR hello-world test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/stan-echelonix-systems/pine-forrest-test
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Log in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" |
+            docker login ghcr.io \
+              --username "${{ github.actor }}" \
+              --password-stdin
+
+      - name: Pull and publish hello-world
+        run: |
+          docker pull --platform linux/amd64 hello-world:latest
+          docker tag hello-world:latest "${IMAGE}:v1"
+          docker push "${IMAGE}:v1"
+
+      - name: Log out
+        if: always()
+        run: docker logout ghcr.io
